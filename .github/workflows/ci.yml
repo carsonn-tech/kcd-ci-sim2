@@ -1,0 +1,9 @@
+name: ci
+on: [pull_request, push, merge_group]
+jobs:
+  green-set:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install -q pytest && python3 -m pytest -q tests

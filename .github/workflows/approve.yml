@@ -1,0 +1,31 @@
+name: approve
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number the reviewer passed
+        required: true
+permissions:
+  pull-requests: write
+  contents: read
+jobs:
+  auto:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          files=$(gh api repos/${{ github.repository }}/pulls/$PR/files --paginate -q '.[].filename')
+          if echo "$files" | grep -qE '^(tests/|\.github/|foundation/)'; then echo "protected path: no auto-approval"; exit 0; fi
+          gh pr review $PR -R ${{ github.repository }} --approve --body "auto: no protected path touched"
+  reviewed:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr review ${{ inputs.pr }} -R ${{ github.repository }} --approve --body "reviewer passed"
